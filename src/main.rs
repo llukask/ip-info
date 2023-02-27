@@ -92,7 +92,9 @@ fn main() {
                         .with_header(Header::from_bytes(&b"ETag"[..], css_etag.as_str()).unwrap());
 
                     log_response(&request, &response, &real_ip);
-                    request.respond(response);
+                    request.respond(response).unwrap_or_else(|err| {
+                        eprintln!("could not send response {err}");
+                    });
                 } else {
                     let response = Response::from_string(MAIN_CSS)
                         .with_header(
@@ -109,7 +111,9 @@ fn main() {
                         .with_header(Header::from_bytes(&b"ETag"[..], css_etag.as_str()).unwrap());
 
                     log_response(&request, &response, &real_ip);
-                    request.respond(response);
+                    request.respond(response).unwrap_or_else(|err| {
+                        eprintln!("could not send response {err}");
+                    });                
                 }
             }
             "/" => {
@@ -170,7 +174,9 @@ fn main() {
                         .unwrap(),
                 );
                 log_response(&request, &response, &real_ip);
-                request.respond(response);
+                request.respond(response).unwrap_or_else(|err| {
+                    eprintln!("could not send response {err}");
+                });
             }
             _ => {
                 let response = Response::from_string("404 not found").with_header(
@@ -178,7 +184,9 @@ fn main() {
                         .unwrap(),
                 );
                 log_response(&request, &response, &real_ip);
-                request.respond(response);
+                request.respond(response).unwrap_or_else(|err| {
+                    eprintln!("could not send response {err}");
+                });
             }
         };
     }
