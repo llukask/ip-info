@@ -30,7 +30,7 @@ fn compute_etag(data: &str) -> String {
 
     let mut reader = hasher.finalize_xof();
     let mut result = [0u8; 16];
-    reader.read(&mut result).expect("Could compute ETag");
+    reader.read(&mut result).expect("could not compute ETag");
 
     format!(
         "W/\"{hash}\"",
