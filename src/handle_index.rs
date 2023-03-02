@@ -1,11 +1,11 @@
-use std::collections::HashMap;
+use std::collections::SortedMap;
 use serde::Serialize;
 use tiny_http::{Header, Request, Response};
 
 use crate::common::{get_real_ip, send_response};
 
-fn used_headers(request: &Request) -> HashMap<String, String> {
-    let mut headers = HashMap::new();
+fn used_headers(request: &Request) -> SortedMap<String, String> {
+    let mut headers = SortedMap::new();
     for header in request.headers() {
         let header_field = header.field.to_string();
 
