@@ -1,7 +1,22 @@
+use std::collections::HashMap;
 use serde::Serialize;
 use tiny_http::{Header, Request, Response};
 
 use crate::common::{get_real_ip, send_response};
+
+fn used_headers(request: &Request) -> HashMap<String, String> {
+    let mut headers = HashMap::new();
+    for header in request.headers() {
+        let header_field = header.field.to_string();
+
+        if header_field.starts_with("X-Forwarded-") || header_field == "X-Real-Ip" {
+            continue;
+        } 
+
+        headers.insert(header_field, header.value.to_string());
+    }
+    headers
+}
 
 pub(crate) fn handle_index_html<Ctx>(_: &Ctx, request: Request) {
     let real_ip = get_real_ip(&request);
@@ -27,12 +42,12 @@ pub(crate) fn handle_index_html<Ctx>(_: &Ctx, request: Request) {
         )
         .as_str(),
     );
-    for header in request.headers() {
+    for (header_field, header_value) in used_headers(&request) {
         let mut encoded_header_field = String::new();
         let mut encoded_header_value = String::new();
 
-        html_escape::encode_safe_to_string(header.field.as_str(), &mut encoded_header_field);
-        html_escape::encode_safe_to_string(&header.value, &mut encoded_header_value);
+        html_escape::encode_safe_to_string(header_field, &mut encoded_header_field);
+        html_escape::encode_safe_to_string(header_value, &mut encoded_header_value);
 
         response_body.push_str(
             format!(
@@ -80,11 +95,7 @@ struct IpResponse {
 pub(crate) fn handle_index_json<Ctx>(_: &Ctx, request: Request) {
     let real_ip = get_real_ip(&request);
 
-    let headers = request
-        .headers()
-        .iter()
-        .map(|h| (h.field.to_string(), h.value.to_string()))
-        .collect();
+    let headers = used_headers(&request);
 
     let response_body = IpResponse {
         ip: real_ip,
