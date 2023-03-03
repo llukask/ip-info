@@ -22,14 +22,13 @@ fn main() {
 
     println!("server running @ {}", &endpoint);
 
-    let index_handlers: Vec<(MediaType, HttpHandler<()>)> = vec![
+    let index_handlers: &[(MediaType, HttpHandler<()>)] = &[
         ("text/plain".into(), handle_index::handle_index_plain),
         ("application/json".into(), handle_index::handle_index_json),
         ("text/html".into(), handle_index::handle_index_html),
     ];
 
-    let css_handlers: Vec<(MediaType, HttpHandler<()>)> =
-        vec![("text/css".into(), handle_css::handle_css)];
+    let css_handlers: &[(MediaType, HttpHandler<()>)] = &[("text/css".into(), handle_css::handle_css)];
 
     for request in server.incoming_requests() {
         match request.url() {
