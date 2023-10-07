@@ -1,5 +1,5 @@
-use std::collections::BTreeMap;
 use serde::Serialize;
+use std::collections::BTreeMap;
 use tiny_http::{Header, Request, Response};
 
 use crate::common::{get_real_ip, send_response};
@@ -11,7 +11,7 @@ fn used_headers(request: &Request) -> BTreeMap<String, String> {
 
         if header_field.starts_with("X-Forwarded-") || header_field == "X-Real-Ip" {
             continue;
-        } 
+        }
 
         headers.insert(header_field, header.value.to_string());
     }
