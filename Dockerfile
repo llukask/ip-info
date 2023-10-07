@@ -1,8 +1,12 @@
-FROM ekidd/rust-musl-builder as builder
+FROM rust:1.71-alpine as builder
+
+RUN apk add --no-cache musl-dev
+RUN mkdir /work
+WORKDIR /work
 
 COPY . .
-RUN --mount=type=cache,target=/home/rust/.cargo/registry,uid=1000,gid=1000 --mount=type=cache,target=/home/rust/src/target,uid=1000,gid=1000 cargo install --path .
+RUN cargo build --release
 
 FROM alpine
-COPY --from=builder /home/rust/.cargo/bin/ip-info /bin/ip-info
+COPY --from=builder /work/target/release/ip-info /bin/ip-info
 CMD [ "/bin/ip-info" ]
