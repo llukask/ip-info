@@ -22,13 +22,17 @@ pub(crate) fn log_response<R: std::io::Read>(
     response: &Response<R>,
     real_ip: &str,
 ) {
+    let time = chrono::Utc::now();
+    let user_agent = header_value(request, "User-Agent").map_or("".to_string(), |u| u.value.to_string());
+
     println!(
-        "{ip} {method} {url} {status} {response_size}",
+        "[{time}] {ip} {method} {url} {status} {response_size} ({user_agent})",
+        time = time.format("%Y-%m-%d %H:%M:%S").to_string(),
         ip = real_ip,
         method = request.method().as_str(),
         url = request.url(),
         status = response.status_code().0,
-        response_size = response.data_length().unwrap_or(0)
+        response_size = response.data_length().unwrap_or(0),
     );
 }
 
@@ -40,8 +44,12 @@ pub(crate) fn header_value(request: &Request, header_name: &str) -> Option<Heade
         .cloned()
 }
 
-pub(crate) fn send_response<R: Read>(request: Request, response: Response<R>) {
+pub(crate) fn send_response<R: Read>(request: Request, mut response: Response<R>) {
     log_response(&request, &response, &get_real_ip(&request));
+
+    let server = Header::from_bytes(&b"Server"[..], &b"ip-info"[..]).unwrap();
+    response.add_header(server);
+
     request.respond(response).unwrap_or_else(|err| {
         eprintln!("could not send response {err}");
     });
