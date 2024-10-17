@@ -1,6 +1,3 @@
-use crate::common::{header_value, send_response, HttpHandler};
-use tiny_http::{Request, Response};
-
 #[derive(Debug, PartialEq, Eq)]
 pub struct MediaType {
     main_type: String,
@@ -11,8 +8,8 @@ pub struct MediaType {
 
 #[derive(Debug)]
 pub struct Directive {
-    media_type: MediaType,
-    q: f32,
+    pub media_type: MediaType,
+    pub q: f32,
 }
 
 impl MediaType {
@@ -74,37 +71,4 @@ pub fn parse_accept(header_value: &str) -> Vec<Directive> {
         .collect::<Vec<Directive>>();
     r.sort_by(|a, b| b.q.partial_cmp(&a.q).unwrap());
     r
-}
-
-fn find_handler<'a, Ctx>(
-    request: &Request,
-    handlers: &'a [(MediaType, HttpHandler<Ctx>)],
-) -> Option<&'a HttpHandler<Ctx>> {
-    if let Some(accept_header) = header_value(request, "Accept") {
-        let directives = parse_accept(accept_header.value.as_str());
-
-        for d in directives {
-            if let Some((_, handler)) = handlers.iter().find(|(mt, _)| mt.matches(&d.media_type)) {
-                return Some(handler);
-            }
-        }
-
-        None
-    } else {
-        Some(&handlers.first().unwrap().1)
-    }
-}
-
-pub fn content_negotiate<Ctx>(
-    ctx: &Ctx,
-    request: Request,
-    handlers: &[(MediaType, HttpHandler<Ctx>)],
-) {
-    match find_handler(&request, handlers) {
-        Some(handler) => handler(ctx, request),
-        None => {
-            let response = Response::from_string("406 Not Acceptable").with_status_code(406);
-            send_response(request, response)
-        }
-    }
 }

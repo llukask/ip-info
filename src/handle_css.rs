@@ -1,3 +1,7 @@
+use axum::{
+    http::{HeaderMap, StatusCode},
+    response::IntoResponse,
+};
 use base64::{engine::general_purpose, Engine};
 use lazy_static::lazy_static;
 use sha3::{
@@ -5,9 +9,6 @@ use sha3::{
     Shake128,
 };
 use std::{include_str, io::Read};
-use tiny_http::{Header, Request, Response};
-
-use crate::common::send_response;
 
 const MAIN_CSS: &str = include_str!("main.css");
 
@@ -31,31 +32,20 @@ fn compute_etag(data: &str) -> String {
     )
 }
 
-pub fn handle_css<Ctx>(_: &Ctx, request: Request) {
-    let etag_matches = request
-        .headers()
-        .iter()
-        .find(|h| h.field.as_str().to_ascii_lowercase() == "if-none-match")
-        .map(|h| h.value == CSS_ETAG.as_str())
+pub async fn axum_handle_css(headers: HeaderMap) -> impl IntoResponse {
+    let etag_matches = headers
+        .get("if-none-match")
+        .map(|v| v == CSS_ETAG.as_str())
         .unwrap_or(false);
 
+    let mut headers = HeaderMap::new();
+    headers.insert("Content-Type", "text/css; charset=utf-8".parse().unwrap());
+    headers.insert("Cache-Control", "max-age=86400".parse().unwrap());
+    headers.insert("ETag", CSS_ETAG.as_str().parse().unwrap());
+
     if etag_matches {
-        let response = Response::empty(304)
-            .with_header(
-                Header::from_bytes(&b"Content-Type"[..], &b"text/css; charset=utf-8"[..]).unwrap(),
-            )
-            .with_header(Header::from_bytes(&b"Cache-Control"[..], &b"max-age=86400"[..]).unwrap())
-            .with_header(Header::from_bytes(&b"ETag"[..], CSS_ETAG.as_str()).unwrap());
-
-        send_response(request, response)
+        (StatusCode::NOT_MODIFIED, headers).into_response()
     } else {
-        let response = Response::from_string(MAIN_CSS)
-            .with_header(
-                Header::from_bytes(&b"Content-Type"[..], &b"text/css; charset=utf-8"[..]).unwrap(),
-            )
-            .with_header(Header::from_bytes(&b"Cache-Control"[..], &b"max-age=86400"[..]).unwrap())
-            .with_header(Header::from_bytes(&b"ETag"[..], CSS_ETAG.as_str()).unwrap());
-
-        send_response(request, response)
+        (headers, MAIN_CSS).into_response()
     }
 }
