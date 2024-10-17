@@ -8,5 +8,5 @@ COPY . .
 RUN cargo build --release
 
 FROM alpine
-COPY --from=builder /work/target/release/server /bin/ip-info
+COPY --from=builder /work/target/release/ip-info /bin/ip-info
 CMD [ "/bin/ip-info" ]
