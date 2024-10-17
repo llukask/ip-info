@@ -5,7 +5,7 @@ pub(crate) type HttpHandler<Ctx> = fn(ctx: &Ctx, request: Request);
 
 pub(crate) fn get_real_ip(req: &Request) -> String {
     for header in req.headers() {
-        if header.field.as_str() == "X-Real-Ip" {
+        if header.field.as_str().to_ascii_lowercase() == "x-real-ip" {
             let ip = header.value.as_str();
             let ip = ip.split(',').next().unwrap();
             let ip = ip.trim();
@@ -27,7 +27,7 @@ pub(crate) fn log_response<R: std::io::Read>(
 
     println!(
         "[{time}] {ip} {method} {url} {status} {response_size} ({user_agent})",
-        time = time.format("%Y-%m-%d %H:%M:%S").to_string(),
+        time = time.format("%Y-%m-%d %H:%M:%S"),
         ip = real_ip,
         method = request.method().as_str(),
         url = request.url(),
@@ -40,7 +40,7 @@ pub(crate) fn header_value(request: &Request, header_name: &str) -> Option<Heade
     request
         .headers()
         .iter()
-        .find(|h| h.field.as_str() == header_name)
+        .find(|h| h.field.as_str().to_ascii_lowercase() == header_name.to_lowercase())
         .cloned()
 }
 
