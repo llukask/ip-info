@@ -28,7 +28,7 @@ pub async fn handle_index(
 
     for d in directives {
         if plain_mt.matches(&d.media_type) {
-            return handle_index_plain(headers, ip).into_response();
+            return handle_index_plain(ip).into_response();
         } else if html_mt.matches(&d.media_type) {
             return handle_index_html(headers, ip).into_response();
         } else if json_mt.matches(&d.media_type) {
@@ -36,11 +36,11 @@ pub async fn handle_index(
         }
     }
 
-    handle_index_plain(headers, ip).into_response()
+    handle_index_plain(ip).into_response()
 }
 
-pub fn handle_index_plain(headers: HeaderMap, ip: String) -> impl IntoResponse {
-    (headers, ip).into_response()
+pub fn handle_index_plain(ip: String) -> impl IntoResponse {
+    format!("{}\n", ip).into_response()
 }
 
 fn handle_index_html(headers: HeaderMap, ip: String) -> impl IntoResponse {
