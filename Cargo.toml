@@ -8,7 +8,7 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.89"
 axum = { version = "0.7.7", features = ["macros"] }
-base64 = "0.21.0"
+base64 = "0.22"
 html-escape = "0.2.13"
 lazy_static = "1.4.0"
 serde = { version = "1.0.152", features = ["derive"] }
