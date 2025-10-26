@@ -1,10 +1,13 @@
+use askama::Template;
+use axum::http::StatusCode;
 use axum::{extract::ConnectInfo, http::HeaderMap, response::IntoResponse, Json};
 use serde::Serialize;
 use std::{collections::BTreeMap, net::SocketAddr};
 
 use crate::content_negotiation::{parse_accept, MediaType};
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Template)]
+#[template(path = "index.html")]
 pub struct IpResponse {
     pub ip: String,
     pub headers: std::collections::BTreeMap<String, String>,
@@ -44,99 +47,23 @@ pub fn handle_index_plain(ip: String) -> impl IntoResponse {
 }
 
 fn handle_index_html(headers: HeaderMap, ip: String) -> impl IntoResponse {
-    let mut response_body = String::new();
-    response_body.push_str(
-        format!(
-            r#"
-<html>
-    <head>
-        <title>ip stats</title>
-        <link rel="stylesheet" href="main.css">
-        <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
-    </head>
-    <body>
-        <header>
-            <h1>your ip is:</h1>
-            <div class="ip-container">
-                <code id="ip-address">{ip}</code>
-                <button onclick="copyToClipboard()" class="copy-button" title="Copy to clipboard">📋</button>
-            </div>
-        </header>
-        <script>
-            function copyToClipboard() {{
-                const ipElement = document.getElementById('ip-address');
-                const button = event.target;
+    let template = IpResponse {
+        ip,
+        headers: used_headers_axum(&headers),
+    };
 
-                // Disable button to prevent multiple clicks
-                if (button.disabled) {{
-                    return;
-                }}
-
-                navigator.clipboard.writeText(ipElement.textContent).then(function() {{
-                    showCopyFeedback(button);
-                }}).catch(function() {{
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = ipElement.textContent;
-                    document.body.appendChild(textArea);
-                    textArea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textArea);
-
-                    showCopyFeedback(button);
-                }});
-            }}
-
-            function showCopyFeedback(button) {{
-                const originalText = button.textContent;
-                button.textContent = '✓';
-                button.classList.add('copied');
-                button.disabled = true;
-
-                setTimeout(function() {{
-                    button.textContent = originalText;
-                    button.classList.remove('copied');
-                    button.disabled = false;
-                }}, 1000);
-            }}
-        </script>
-        <main>
-        "#,
+    match template.render() {
+        Ok(html) => {
+            let mut response_headers = HeaderMap::new();
+            response_headers.insert("Content-Type", "text/html; charset=utf-8".parse().unwrap());
+            (response_headers, html).into_response()
+        }
+        Err(_) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Template rendering failed",
         )
-        .as_str(),
-    );
-    for (header_field, header_value) in used_headers_axum(&headers) {
-        let mut encoded_header_field = String::new();
-        let mut encoded_header_value = String::new();
-
-        html_escape::encode_safe_to_string(header_field, &mut encoded_header_field);
-        html_escape::encode_safe_to_string(header_value, &mut encoded_header_value);
-
-        response_body.push_str(
-            format!(
-                r#"
-            <div class="header-container">
-                <code>[{}]</code>
-                <code>{}</code>
-            </div>
-                "#,
-                &encoded_header_field, &encoded_header_value
-            )
-            .as_str(),
-        );
+            .into_response(),
     }
-    response_body.push_str(
-        r#"
-        </main>
-    </body>
-</html>
-        "#,
-    );
-
-    let mut response_headers = HeaderMap::new();
-    response_headers.insert("Content-Type", "text/html; charset=utf-8".parse().unwrap());
-
-    (response_headers, response_body)
 }
 
 pub fn handle_index_json(headers: HeaderMap, ip: String) -> impl IntoResponse {

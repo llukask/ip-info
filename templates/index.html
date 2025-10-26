@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+    <head>
+        <title>ip stats</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="main.css" />
+        <link
+            rel="shortcut icon"
+            href="data:image/x-icon;,"
+            type="image/x-icon"
+        />
+    </head>
+    <body>
+        <header>
+            <h1>your ip is:</h1>
+            <div class="ip-container">
+                <code id="ip-address">{{ ip }}</code>
+                <button
+                    onclick="copyToClipboard()"
+                    class="copy-button"
+                    title="Copy to clipboard"
+                >
+                    📋
+                </button>
+            </div>
+        </header>
+        <script>
+            function copyToClipboard() {
+                const ipElement = document.getElementById("ip-address");
+                const button = event.target;
+
+                // Disable button to prevent multiple clicks
+                if (button.disabled) {
+                    return;
+                }
+
+                navigator.clipboard
+                    .writeText(ipElement.textContent)
+                    .then(function () {
+                        showCopyFeedback(button);
+                    })
+                    .catch(function () {
+                        // Fallback for older browsers
+                        const textArea = document.createElement("textarea");
+                        textArea.value = ipElement.textContent;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(textArea);
+
+                        showCopyFeedback(button);
+                    });
+            }
+
+            function showCopyFeedback(button) {
+                const originalText = button.textContent;
+                button.textContent = "✓";
+                button.classList.add("copied");
+                button.disabled = true;
+
+                setTimeout(function () {
+                    button.textContent = originalText;
+                    button.classList.remove("copied");
+                    button.disabled = false;
+                }, 1000);
+            }
+        </script>
+        <main>
+            {% for (header_field, header_value) in headers %}
+            <div class="header-container">
+                <code>[{{ header_field|e }}]</code>
+                <code>{{ header_value|e }}</code>
+            </div>
+            {% endfor %}
+        </main>
+    </body>
+</html>
