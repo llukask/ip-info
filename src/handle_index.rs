@@ -52,13 +52,54 @@ fn handle_index_html(headers: HeaderMap, ip: String) -> impl IntoResponse {
     <head>
         <title>ip stats</title>
         <link rel="stylesheet" href="main.css">
-        <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon"> 
+        <link rel="shortcut icon" href="data:image/x-icon;," type="image/x-icon">
     </head>
     <body>
         <header>
             <h1>your ip is:</h1>
-            <code>{ip}</code>
+            <div class="ip-container">
+                <code id="ip-address">{ip}</code>
+                <button onclick="copyToClipboard()" class="copy-button" title="Copy to clipboard">📋</button>
+            </div>
         </header>
+        <script>
+            function copyToClipboard() {{
+                const ipElement = document.getElementById('ip-address');
+                const button = event.target;
+
+                // Disable button to prevent multiple clicks
+                if (button.disabled) {{
+                    return;
+                }}
+
+                navigator.clipboard.writeText(ipElement.textContent).then(function() {{
+                    showCopyFeedback(button);
+                }}).catch(function() {{
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = ipElement.textContent;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+
+                    showCopyFeedback(button);
+                }});
+            }}
+
+            function showCopyFeedback(button) {{
+                const originalText = button.textContent;
+                button.textContent = '✓';
+                button.classList.add('copied');
+                button.disabled = true;
+
+                setTimeout(function() {{
+                    button.textContent = originalText;
+                    button.classList.remove('copied');
+                    button.disabled = false;
+                }}, 1000);
+            }}
+        </script>
         <main>
         "#,
         )
@@ -73,7 +114,7 @@ fn handle_index_html(headers: HeaderMap, ip: String) -> impl IntoResponse {
 
         response_body.push_str(
             format!(
-                r#"        
+                r#"
             <div class="header-container">
                 <code>[{}]</code>
                 <code>{}</code>
@@ -93,7 +134,7 @@ fn handle_index_html(headers: HeaderMap, ip: String) -> impl IntoResponse {
     );
 
     let mut response_headers = HeaderMap::new();
-    response_headers.insert("Content-Type", "text/html".parse().unwrap());
+    response_headers.insert("Content-Type", "text/html; charset=utf-8".parse().unwrap());
 
     (response_headers, response_body)
 }
