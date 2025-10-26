@@ -23,9 +23,9 @@ pub async fn handle_index(
         .unwrap_or("*/*");
     let directives = parse_accept(accept_header);
 
-    let json_mt: MediaType = "application/json".into();
-    let html_mt: MediaType = "text/html".into();
-    let plain_mt: MediaType = "text/plain".into();
+    let json_mt: MediaType = "application/json".try_into().unwrap();
+    let html_mt: MediaType = "text/html".try_into().unwrap();
+    let plain_mt: MediaType = "text/plain".try_into().unwrap();
 
     let ip = real_ip(&headers, addr.ip());
 
