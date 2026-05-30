@@ -4,11 +4,9 @@ use axum::{
 };
 use base64::{engine::general_purpose, Engine};
 use lazy_static::lazy_static;
-use sha3::{
-    digest::{ExtendableOutput, Update},
-    Shake128,
-};
-use std::{include_str, io::Read};
+use shake::digest::{ExtendableOutput, Update, XofReader};
+use shake::Shake128;
+use std::include_str;
 
 const MAIN_CSS: &str = include_str!("main.css");
 
@@ -22,9 +20,7 @@ fn compute_etag(data: &str) -> String {
 
     let mut reader = hasher.finalize_xof();
     let mut result = [0u8; 16];
-    reader
-        .read_exact(&mut result)
-        .expect("could not compute ETag");
+    reader.read(&mut result);
 
     format!(
         "W/\"{hash}\"",
