@@ -19,13 +19,16 @@
           ./rust-toolchain.toml);
 
         ip-info = let
-          cssFilter = path: _type: builtins.match ".*css$" path != null;
-          cssOrCargo = path: type:
-            (cssFilter path type) || (craneLib.filterCargoSources path type);
+          # Askama templates and CSS live outside Cargo's source tree, so the
+          # default Cargo source filter would strip them from the build sandbox.
+          assetFilter = path: _type:
+            builtins.match ".*(css|html)$" path != null;
+          assetOrCargo = path: type:
+            (assetFilter path type) || (craneLib.filterCargoSources path type);
         in craneLib.buildPackage {
           src = pkgs.lib.cleanSourceWith {
             src = ./.;
-            filter = cssOrCargo;
+            filter = assetOrCargo;
             name = "source";
           };
         };
